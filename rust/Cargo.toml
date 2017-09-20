@@ -1,0 +1,8 @@
+[package]
+name = "simple_merkle_tree_demo"
+version = "0.1.0"
+authors = ["Paul Hammant <paul@hammant.org>", "Ash Levy <ashlea@protonmail.com>"]
+
+[dependencies]
+sha1 = "0.2.0"
+time = "0.1.38"
