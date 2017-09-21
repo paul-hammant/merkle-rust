@@ -16,8 +16,13 @@ python2 update_merke_tree_hashes.py
 
 That one just runs in a loop.  Sure that's not exactly friendly to the host machine, but this is only a proof of concept.
 
-The Rust version is in the rust directory (ported by [Ash Levy](https://gitlab.com/ashkitten)). To run it, just `cd` to the directory and run:
+## Rust Version
+
+The Rust version is in the rust directory (ported by [Ash Levy](https://gitlab.com/ashkitten)). To run it,
+just `cd` to the directory and run:
 
 ```
 cargo run -- ../data
 ```
+
+Not that the run time is largely the same as the Python version as it is very IO bound.
