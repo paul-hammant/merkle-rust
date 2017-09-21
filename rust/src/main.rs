@@ -1,6 +1,9 @@
 extern crate sha1;
 extern crate time;
 
+#[cfg(test)]
+mod test;
+
 use std::fs::File;
 use std::io::BufReader;
 use std::io::prelude::*;
