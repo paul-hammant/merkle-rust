@@ -69,10 +69,10 @@ fn process_directory(dir: &Path) -> (String, u32) {
 }
 
 fn main() {
-    let start = time::now();
 
     if let Some(path) = std::env::args().nth(1) {
         loop {
+            let start = time::now();
             let (sha1, count) = process_directory(Path::new(&path));
             println!("Updates: {}, root SHA1: {}, duration: {}s", count, sha1, (time::now() - start).num_seconds());
         }
