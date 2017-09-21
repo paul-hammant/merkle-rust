@@ -6,3 +6,4 @@ authors = ["Paul Hammant <paul@hammant.org>", "Ash Levy <ashlea@protonmail.com>"
 [dependencies]
 sha1 = "0.2.0"
 time = "0.1.38"
+notify = "4.0.1"

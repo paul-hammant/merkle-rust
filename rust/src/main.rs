@@ -1,23 +1,30 @@
+extern crate notify;
 extern crate sha1;
 extern crate time;
+
+mod worker;
 
 #[cfg(test)]
 mod test;
 
+use notify::{raw_watcher, RawEvent, RecursiveMode, Watcher};
 use std::fs::File;
 use std::io::BufReader;
 use std::io::prelude::*;
 use std::path::Path;
+use std::sync::{Arc, Mutex};
+use std::sync::mpsc::channel;
+use std::thread;
 
-fn comma_separated_list(dir_sha1s: &Vec<String>) -> String {
+pub fn comma_separated_list(dir_sha1s: &Vec<String>) -> String {
     let mut dir_sha1s = dir_sha1s.clone();
     dir_sha1s.sort();
     dir_sha1s.as_slice().join(",")
 }
 
-fn get_contents(path: &Path) -> String {
+pub fn get_contents(path: &Path) -> String {
     if !path.exists() {
-        return "".to_string()
+        return "".to_string();
     }
     let file = File::open(path).unwrap();
     let mut reader = BufReader::new(file);
@@ -26,12 +33,12 @@ fn get_contents(path: &Path) -> String {
     contents
 }
 
-fn write_contents(path: &Path, contents: &str) {
+pub fn write_contents(path: &Path, contents: &str) {
     let mut file = File::create(path).unwrap();
     file.write_all(contents.as_bytes()).unwrap();
 }
 
-fn make_sha1(input: &str) -> String {
+pub fn make_sha1(input: &str) -> String {
     let mut sha1 = sha1::Sha1::new();
     sha1.update(input.as_bytes());
     sha1.digest().to_string()
@@ -71,14 +78,46 @@ fn process_directory(dir: &Path) -> (String, u32) {
     (sha1, count)
 }
 
-fn main() {
-    let start = time::now();
+fn run(path: &str) {
+    process_directory(Path::new(path));
 
-    if let Some(path) = std::env::args().nth(1) {
-        loop {
-            let (sha1, count) = process_directory(Path::new(&path));
-            println!("Updates: {}, root SHA1: {}, duration: {}s", count, sha1, (time::now() - start).num_seconds());
+    let jobs = Arc::new(Mutex::new(Vec::new()));
+
+    let path = Path::new(&path).to_path_buf();
+    let thread_path = std::env::current_dir().unwrap().join(path.clone());
+    let thread_jobs = jobs.clone();
+    thread::spawn(|| worker::work(thread_path, thread_jobs));
+
+    let (tx, rx) = channel();
+    let mut watcher = raw_watcher(tx).unwrap();
+    watcher.watch(&path, RecursiveMode::Recursive).unwrap();
+
+    loop {
+        match rx.recv() {
+            Ok(RawEvent {
+                path: Some(path),
+                op: Ok(op),
+                ..
+            }) => if op == ::notify::op::WRITE {
+                if let Some(extension) = path.clone().extension() {
+                    if extension == "json" {
+                        let mut guard = match jobs.lock() {
+                            Ok(guard) => guard,
+                            Err(poisoned) => poisoned.into_inner(),
+                        };
+                        (*guard).push(path);
+                    }
+                }
+            },
+            Ok(event) => println!("broken event: {:?}", event),
+            Err(e) => println!("watch error: {:?}", e),
         }
+    }
+}
+
+fn main() {
+    if let Some(path) = std::env::args().nth(1) {
+        run(&path);
     } else {
         println!("Specify data directory - `cargo run -- <directory>`");
     }
