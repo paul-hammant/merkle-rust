@@ -18,6 +18,7 @@ use std::sync::mpsc::channel;
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Instant;
+use std::ffi::OsStr;
 
 pub fn comma_separated_list(dir_sha1s: &Vec<String>) -> String {
     let mut dir_sha1s = dir_sha1s.clone();
@@ -55,15 +56,13 @@ fn process_directory(dir: &Path) -> String {
 
         if path.is_dir() {
             dir_sha1s.push(process_directory(&path));
-        } else if let Some(extension) = path.extension() {
-            if extension == "json" {
-                let sha1_file = format!("{}.sha1", path.to_string_lossy());
-                let sha1 = make_sha1(&get_contents(&path));
-                if sha1 != get_contents(Path::new(&sha1_file)) {
-                    write_contents(Path::new(&sha1_file), &sha1);
-                }
-                dir_sha1s.push(sha1);
+        } else if let Some("json") = path.extension().and_then(OsStr::to_str) {
+            let sha1_file = format!("{}.sha1", path.to_string_lossy());
+            let sha1 = make_sha1(&get_contents(&path));
+            if sha1 != get_contents(Path::new(&sha1_file)) {
+                write_contents(Path::new(&sha1_file), &sha1);
             }
+            dir_sha1s.push(sha1);
         }
     }
 

@@ -1,9 +1,10 @@
-use std::thread;
-use std::path::Path;
-use std::time::{Duration, Instant};
-use std::fs::File;
+use std::ffi::OsStr;
+use std::fs::{self, File};
 use std::io::BufReader;
 use std::io::prelude::*;
+use std::path::Path;
+use std::thread;
+use std::time::{Duration, Instant};
 
 fn file_matches(path: &Path, expected: &str) -> bool {
     let file = File::open(path).unwrap();
@@ -38,15 +39,32 @@ fn wait_for_file_matches(path: &Path, expected: &str) {
     }
 }
 
+fn clean_dir(path: &Path) {
+    for entry in path.read_dir().unwrap() {
+        let path = entry.unwrap().path();
+
+        if path.is_dir() {
+            clean_dir(&path);
+        } else if Some("json.sha1") == path.extension().and_then(OsStr::to_str) {
+            fs::remove_file(path).unwrap();
+        }
+    }
+}
+
 #[test]
 fn integration_test() {
     ::env_logger::init().unwrap();
 
-    thread::spawn(|| ::run("../data"));
-
     let root = Path::new("../data");
     let root_sha1_path = root.join(".sha1");
     let dummy_file_path = root.join("O/OK/J/Johnston_County/38920.json");
+
+    if dummy_file_path.exists() {
+        fs::remove_file(&dummy_file_path).unwrap();
+    }
+    clean_dir(&root);
+
+    thread::spawn(|| ::run("../data"));
 
     // Wait for root sha1 to be created
     info!(
@@ -67,6 +85,4 @@ fn integration_test() {
     // Wait for root sha1 to change
     wait_for_file_matches(&root_sha1_path, "e600c58d06aee522595acb019e71487db53eb487");
     info!("Second test passed - root sha1 matches");
-
-    ::std::fs::remove_file(&dummy_file_path).unwrap();
 }
