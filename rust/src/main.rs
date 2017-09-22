@@ -87,8 +87,8 @@ fn run(path: &str) {
 
     let jobs = Arc::new(Mutex::new(Vec::new()));
 
-    let path = Path::new(&path).to_path_buf();
-    let thread_path = std::env::current_dir().unwrap().join(path.clone());
+    let path = Path::new(&path).to_path_buf().canonicalize().unwrap();
+    let thread_path = path.clone();
     let thread_jobs = jobs.clone();
     thread::spawn(|| worker::work(thread_path, thread_jobs));
 

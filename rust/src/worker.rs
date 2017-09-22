@@ -22,7 +22,12 @@ fn dir_sha1(dir: &Path) -> String {
 }
 
 fn is_subdir(path: &Path, root: &Path) -> bool {
-    let mut path = path.clone();
+    // Canonicalize the path
+    let path = path.canonicalize().unwrap();
+    // Borrow to mutable &Path
+    let mut path = path.as_path();
+
+    let root = root.canonicalize().unwrap();
 
     while let Some(parent) = path.parent() {
         if parent == root {
