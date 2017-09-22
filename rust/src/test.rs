@@ -14,7 +14,7 @@ fn file_matches(path: &Path, expected: &str) -> bool {
     contents == expected
 }
 
-fn wait_for_file_exists(path: &Path) {
+fn wait_for_file_to_exist(path: &Path) {
     let start = Instant::now();
     while !path.exists() {
         thread::sleep(Duration::from_millis(500));
@@ -71,7 +71,7 @@ fn integration_test() {
         "Waiting for root sha1 to be created - path: {:?}",
         root_sha1_path
     );
-    wait_for_file_exists(&root_sha1_path);
+    wait_for_file_to_exist(&root_sha1_path);
     wait_for_file_matches(&root_sha1_path, "33cf709e348a0bf57686ddc60398f755e9783517");
     info!("First test passed - root sha1 matches");
 
