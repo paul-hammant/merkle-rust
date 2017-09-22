@@ -100,7 +100,7 @@ fn run(path: &str) {
                 path: Some(path),
                 op: Ok(op),
                 ..
-            }) => if op == ::notify::op::WRITE {
+            }) => if op & ::notify::op::WRITE == ::notify::op::WRITE {
                 if let Some(extension) = path.clone().extension() {
                     if extension == "json" {
                         println!("[main] Queueing job for {}", path.to_string_lossy());
