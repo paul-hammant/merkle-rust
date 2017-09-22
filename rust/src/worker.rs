@@ -1,7 +1,7 @@
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 use std::thread;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 fn dir_sha1(dir: &Path) -> String {
     let mut sha1s = Vec::new();
@@ -29,7 +29,10 @@ fn process_leaf(path: &Path, root: &Path) -> String {
         sha1_file = path.join(".sha1");
     } else {
         sha1 = ::make_sha1(&::get_contents(path));
-        sha1_file = path.with_extension(format!("{}.sha1", path.extension().unwrap().to_str().unwrap()));
+        sha1_file = path.with_extension(format!(
+            "{}.sha1",
+            path.extension().unwrap().to_str().unwrap()
+        ));
     }
     if sha1 != ::get_contents(&sha1_file) {
         ::write_contents(&sha1_file, &sha1);
@@ -43,23 +46,29 @@ fn process_leaf(path: &Path, root: &Path) -> String {
 }
 
 pub fn work(root: PathBuf, jobs: Arc<Mutex<Vec<PathBuf>>>) {
-    let start = ::time::now();
+    let start = Instant::now();
 
     loop {
-        let mut guard = match jobs.lock() {
-            Ok(guard) => guard,
-            Err(poisoned) => poisoned.into_inner(),
-        };
-        if !guard.is_empty() {
-            let job = guard.pop().unwrap();
-            let sha1 = process_leaf(&job, &root);
-            println!(
-                "root SHA1: {}, duration: {}s",
-                sha1,
-                (::time::now() - start).num_seconds()
-            );
+        // Introduce a new scope so the mutex gets dropped and other threads can pick it up
+        {
+            let mut guard = match jobs.lock() {
+                Ok(guard) => guard,
+                Err(poisoned) => poisoned.into_inner(),
+            };
+            if !guard.is_empty() {
+                let job = guard.pop().unwrap();
+
+                println!("Worker got job for {}", job.to_string_lossy());
+
+                let sha1 = process_leaf(&job, &root);
+                println!(
+                    "Job finished - new root sha1: {}, duration: {}s",
+                    sha1,
+                    start.elapsed().as_secs()
+                );
+            }
         }
 
-        thread::sleep(Duration::new(0, 500));
+        thread::sleep(Duration::from_millis(50));
     }
 }

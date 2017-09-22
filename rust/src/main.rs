@@ -1,6 +1,5 @@
 extern crate notify;
 extern crate sha1;
-extern crate time;
 
 mod worker;
 
@@ -12,9 +11,10 @@ use std::fs::File;
 use std::io::BufReader;
 use std::io::prelude::*;
 use std::path::Path;
-use std::sync::{Arc, Mutex};
 use std::sync::mpsc::channel;
+use std::sync::{Arc, Mutex};
 use std::thread;
+use std::time::Instant;
 
 pub fn comma_separated_list(dir_sha1s: &Vec<String>) -> String {
     let mut dir_sha1s = dir_sha1s.clone();
@@ -44,23 +44,19 @@ pub fn make_sha1(input: &str) -> String {
     sha1.digest().to_string()
 }
 
-fn process_directory(dir: &Path) -> (String, u32) {
+fn process_directory(dir: &Path) -> String {
     let mut dir_sha1s = Vec::new();
-    let mut count = 0;
 
     for entry in dir.read_dir().unwrap() {
         let path = entry.unwrap().path();
 
         if path.is_dir() {
-            let (new_sha1, new_count) = process_directory(&path);
-            dir_sha1s.push(new_sha1.to_string());
-            count += new_count;
+            dir_sha1s.push(process_directory(&path));
         } else if let Some(extension) = path.extension() {
             if extension == "json" {
                 let sha1_file = format!("{}.sha1", path.to_string_lossy());
                 let sha1 = make_sha1(&get_contents(&path));
                 if sha1 != get_contents(Path::new(&sha1_file)) {
-                    count += 1;
                     write_contents(Path::new(&sha1_file), &sha1);
                 }
                 dir_sha1s.push(sha1);
@@ -71,15 +67,21 @@ fn process_directory(dir: &Path) -> (String, u32) {
     let sha1 = make_sha1(&comma_separated_list(&dir_sha1s));
     let sha1_file = dir.join(".sha1");
     if sha1 != get_contents(&sha1_file) {
-        count += 1;
         write_contents(&sha1_file, &sha1);
     }
 
-    (sha1, count)
+    sha1
 }
 
 fn run(path: &str) {
-    process_directory(Path::new(path));
+    let start = Instant::now();
+    println!("Starting initial sha1 generation");
+    let sha1 = process_directory(Path::new(path));
+    println!(
+        "Initial generation finished - root sha1: {}, duration: {}s",
+        sha1,
+        start.elapsed().as_secs()
+    );
 
     let jobs = Arc::new(Mutex::new(Vec::new()));
 
@@ -101,6 +103,7 @@ fn run(path: &str) {
             }) => if op == ::notify::op::WRITE {
                 if let Some(extension) = path.clone().extension() {
                     if extension == "json" {
+                        println!("Queueing job for {}", path.to_string_lossy());
                         let mut guard = match jobs.lock() {
                             Ok(guard) => guard,
                             Err(poisoned) => poisoned.into_inner(),
