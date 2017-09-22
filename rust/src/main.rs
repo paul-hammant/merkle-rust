@@ -1,3 +1,5 @@
+#[macro_use] extern crate log;
+extern crate env_logger;
 extern crate notify;
 extern crate sha1;
 
@@ -75,10 +77,10 @@ fn process_directory(dir: &Path) -> String {
 
 fn run(path: &str) {
     let start = Instant::now();
-    println!("[main] Starting initial sha1 generation");
+    info!("Starting initial sha1 generation");
     let sha1 = process_directory(Path::new(path));
-    println!(
-        "[main] Initial generation finished - root sha1: {}, duration: {}s",
+    info!(
+        "Initial generation finished - root sha1: {}, duration: {}s",
         sha1,
         start.elapsed().as_secs()
     );
@@ -100,28 +102,34 @@ fn run(path: &str) {
                 path: Some(path),
                 op: Ok(op),
                 ..
-            }) => if op & ::notify::op::WRITE == ::notify::op::WRITE {
-                if let Some(extension) = path.clone().extension() {
-                    if extension == "json" {
-                        println!("[main] Queueing job for {}", path.to_string_lossy());
-                        let mut guard = match jobs.lock() {
-                            Ok(guard) => guard,
-                            Err(poisoned) => poisoned.into_inner(),
-                        };
-                        (*guard).push(path);
+            }) => {
+                debug!("FS event - path: {:?}, op: {:?}", path, op);
+                if op & ::notify::op::WRITE == ::notify::op::WRITE {
+                    if let Some(extension) = path.clone().extension() {
+                        if extension == "json" {
+                            info!("Queueing job for {:?}", path);
+                            let mut guard = match jobs.lock() {
+                                Ok(guard) => guard,
+                                Err(poisoned) => poisoned.into_inner(),
+                            };
+                            (*guard).push(path);
+                        }
                     }
                 }
             },
-            Ok(event) => println!("[main] Broken event: {:?}", event),
-            Err(e) => println!("[main] Watch error: {:?}", e),
+            Ok(event) => error!("Broken event: {:?}", event),
+            Err(e) => error!("Watch error: {:?}", e),
         }
     }
 }
 
 fn main() {
+    env_logger::init().unwrap();
+
     if let Some(path) = std::env::args().nth(1) {
         run(&path);
     } else {
         println!("Specify data directory - `cargo run -- <directory>`");
+        std::process::exit(1);
     }
 }

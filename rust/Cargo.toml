@@ -6,3 +6,5 @@ authors = ["Paul Hammant <paul@hammant.org>", "Ash Levy <ashlea@protonmail.com>"
 [dependencies]
 sha1 = "0.2.0"
 notify = "4.0.1"
+env_logger = "0.4.3"
+log = "0.3.8"

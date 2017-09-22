@@ -35,6 +35,7 @@ fn is_subdir(path: &Path, root: &Path) -> bool {
 }
 
 fn process_leaf(path: &Path, root: &Path) -> String {
+    debug!("Processing leaf - path: {:?}, root: {:?}", path, root);
     assert!(
         is_subdir(path, root) || path == root,
         "Leaf is not within root directory"
@@ -76,11 +77,11 @@ pub fn work(root: PathBuf, jobs: Arc<Mutex<Vec<PathBuf>>>) {
             if !guard.is_empty() {
                 let job = guard.pop().unwrap();
 
-                println!("[work] Got job for {}", job.to_string_lossy());
+                info!("Got job for {}", job.to_string_lossy());
 
                 let sha1 = process_leaf(&job, &root);
-                println!(
-                    "[work] Job finished - new root sha1: {}, duration: {}s",
+                info!(
+                    "Job finished - new root sha1: {}, duration: {}s",
                     sha1,
                     start.elapsed().as_secs()
                 );

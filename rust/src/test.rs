@@ -13,6 +13,8 @@ fn root_sha1_matches(expected: &str) -> Option<bool> {
         let mut contents = String::new();
         reader.read_to_string(&mut contents).unwrap();
 
+        debug!("Root sha1: {}", contents);
+
         Some(contents == expected)
     } else {
         None
@@ -21,6 +23,8 @@ fn root_sha1_matches(expected: &str) -> Option<bool> {
 
 #[test]
 fn integration_test() {
+    ::env_logger::init().unwrap();
+
     thread::spawn(|| ::run("../data"));
 
     let start = Instant::now();
@@ -39,10 +43,10 @@ fn integration_test() {
         // The test will fail after 60 seconds
         assert!(Instant::now() - start < Duration::from_secs(60));
     }
-    println!("[test] First test passed - root sha1 matches");
+    info!("First test passed - root sha1 matches");
 
     // Write new json file - this should change the hash
-    println!("[test] Creating new .json file - root sha1 should change");
+    info!("Creating new .json file - root sha1 should change");
     File::create(Path::new("../data/O/OK/J/Johnston_County/38920.json"))
         .unwrap()
         .write_all("integration test".as_bytes())
@@ -58,5 +62,5 @@ fn integration_test() {
         // The test will fail after 60 seconds
         assert!(Instant::now() - start < Duration::from_secs(60));
     }
-    println!("[test] Second test passed - root sha1 does not match");
+    info!("Second test passed - root sha1 does not match");
 }
