@@ -1,5 +1,6 @@
-#[macro_use] extern crate log;
 extern crate env_logger;
+#[macro_use]
+extern crate log;
 extern crate notify;
 extern crate sha1;
 
@@ -116,7 +117,7 @@ fn run(path: &str) {
                         }
                     }
                 }
-            },
+            }
             Ok(event) => error!("Broken event: {:?}", event),
             Err(e) => error!("Watch error: {:?}", e),
         }

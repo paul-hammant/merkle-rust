@@ -63,10 +63,10 @@ fn process_leaf(path: &Path, root: &Path) -> String {
     }
 
     if path != root {
-        process_leaf(path.parent().unwrap(), root);
+        process_leaf(path.parent().unwrap(), root)
+    } else {
+        sha1
     }
-
-    sha1
 }
 
 pub fn work(root: PathBuf, jobs: Arc<Mutex<Vec<PathBuf>>>) {
