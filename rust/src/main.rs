@@ -75,10 +75,10 @@ fn process_directory(dir: &Path) -> String {
 
 fn run(path: &str) {
     let start = Instant::now();
-    println!("Starting initial sha1 generation");
+    println!("[main] Starting initial sha1 generation");
     let sha1 = process_directory(Path::new(path));
     println!(
-        "Initial generation finished - root sha1: {}, duration: {}s",
+        "[main] Initial generation finished - root sha1: {}, duration: {}s",
         sha1,
         start.elapsed().as_secs()
     );
@@ -103,7 +103,7 @@ fn run(path: &str) {
             }) => if op == ::notify::op::WRITE {
                 if let Some(extension) = path.clone().extension() {
                     if extension == "json" {
-                        println!("Queueing job for {}", path.to_string_lossy());
+                        println!("[main] Queueing job for {}", path.to_string_lossy());
                         let mut guard = match jobs.lock() {
                             Ok(guard) => guard,
                             Err(poisoned) => poisoned.into_inner(),
@@ -112,8 +112,8 @@ fn run(path: &str) {
                     }
                 }
             },
-            Ok(event) => println!("broken event: {:?}", event),
-            Err(e) => println!("watch error: {:?}", e),
+            Ok(event) => println!("[main] Broken event: {:?}", event),
+            Err(e) => println!("[main] Watch error: {:?}", e),
         }
     }
 }

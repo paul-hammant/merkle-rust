@@ -21,7 +21,25 @@ fn dir_sha1(dir: &Path) -> String {
     ::make_sha1(&::comma_separated_list(&sha1s))
 }
 
+fn is_subdir(path: &Path, root: &Path) -> bool {
+    let mut path = path.clone();
+
+    while let Some(parent) = path.parent() {
+        if parent == root {
+            return true;
+        }
+        path = parent;
+    }
+
+    false
+}
+
 fn process_leaf(path: &Path, root: &Path) -> String {
+    assert!(
+        is_subdir(path, root) || path == root,
+        "Leaf is not within root directory"
+    );
+
     let sha1;
     let sha1_file;
     if path.is_dir() {
@@ -58,11 +76,11 @@ pub fn work(root: PathBuf, jobs: Arc<Mutex<Vec<PathBuf>>>) {
             if !guard.is_empty() {
                 let job = guard.pop().unwrap();
 
-                println!("Worker got job for {}", job.to_string_lossy());
+                println!("[work] Got job for {}", job.to_string_lossy());
 
                 let sha1 = process_leaf(&job, &root);
                 println!(
-                    "Job finished - new root sha1: {}, duration: {}s",
+                    "[work] Job finished - new root sha1: {}, duration: {}s",
                     sha1,
                     start.elapsed().as_secs()
                 );
