@@ -1,4 +1,4 @@
 .idea/
-/rust/target/
+/target/
 **/*.rs.bk
 data/**/*.sha1
