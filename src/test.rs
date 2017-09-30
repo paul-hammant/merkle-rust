@@ -69,7 +69,7 @@ fn clean_dir(path: &Path) {
 fn integration_test() {
     ::env_logger::init().unwrap();
 
-    let root = Path::new("../data");
+    let root = Path::new("data");
     let root_sha1_path = root.join(".sha1");
     let dummy_file_path = root.join("O/OK/J/Johnston_County/38920.json");
 
@@ -78,7 +78,7 @@ fn integration_test() {
     }
     clean_dir(&root);
 
-    thread::spawn(|| ::run("../data"));
+    thread::spawn(|| ::run("data"));
 
     // Wait for root sha1 to be created
     info!(

@@ -3,7 +3,7 @@
 A simple Rust Merkle tree (ported by [Ash Levy](https://gitlab.com/ashkitten) from Python). To run it:
 
 ```
-cargo run -- ../data
+cargo run -- ./data
 ```
 
 To run its integration tests:
