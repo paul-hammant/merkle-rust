@@ -5,9 +5,12 @@ from bottle import route, run, template, app, response
 @route('/<path:path>')
 def all(path="/"):
 
-    if path == "favicon.ico":
-        return None
     data_path = "data/" + path
+
+    if not os.path.exists(data_path):
+        response.status = 404
+        return "not there"
+
     if os.path.isfile(data_path):
         try:
             with open(data_path, "rb") as in_file:
