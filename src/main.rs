@@ -18,7 +18,13 @@ extern crate log;
 extern crate notify;
 extern crate sha1;
 
+extern crate hyper;
+extern crate futures;
+
+extern crate glob;
+
 mod worker;
+mod server;
 
 #[cfg(test)]
 mod test;
@@ -141,6 +147,14 @@ fn main() {
     env_logger::init().unwrap();
 
     if let Some(path) = std::env::args().nth(1) {
+        let path_ = path.to_string();
+
+        // start HTTP server on a new thread
+        thread::spawn(|| {
+            server::run_server(path_, 8080);
+        });
+
+        // start fs watcher/hasher
         run(&path);
     } else {
         println!("Specify data directory - `cargo run -- <directory>`");
