@@ -2,3 +2,4 @@
 /target/
 **/*.rs.bk
 data/**/*.sha1
+*.pyc

@@ -86,7 +86,8 @@ impl Service for MerkleTreeExplorer {
                         .expect("something went wrong reading the file");
                 }
                 Err(why) => {
-                    error!("couldn't read file {:?}, error {:?}", path, why);
+                    // error!("couldn't read file {:?}, error {:?}", path, why);
+                    response.set_status(StatusCode::NotFound);
                     contents.push_str("not there");
                 }
             }
